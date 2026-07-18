@@ -1,0 +1,23 @@
+{
+  "name": "MOTO FIT",
+  "short_name": "MOTO FIT",
+  "description": "Offline fitness timer — craft or upload routines, then execute with automated timing",
+  "start_url": "/MOTO FIT/index.html",
+  "scope": "/MOTO FIT/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#0a0a0f",
+  "background_color": "#0a0a0f",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
