@@ -1,0 +1,1433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>MOTO FIT</title>
+<style>
+/* ── Reset & Base ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 16px; -webkit-tap-highlight-color: transparent; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+  background: #0a0a0f; color: #fff; min-height: 100dvh; overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+input, button { font: inherit; color: inherit; border: none; outline: none; background: none; }
+button { cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+ul { list-style: none; }
+
+/* ── CSS Variables ── */
+:root {
+  --surface: #141420;
+  --surface-hover: #1c1c30;
+  --surface-active: #222238;
+  --accent: #00e676;
+  --accent-dim: #00c853;
+  --danger: #ff5252;
+  --danger-hover: #ff1744;
+  --warn: #ffab40;
+  --text: #ffffff;
+  --text-dim: #7a7a99;
+  --text-muted: #4a4a66;
+  --border: #2a2a40;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --gap: 16px;
+  --gap-sm: 10px;
+}
+
+/* ── Views ── */
+.view { display: none; flex-direction: column; min-height: 100dvh; }
+.view.active { display: flex; }
+
+/* ── Landing View ── */
+#landing-view { padding: 24px var(--gap) 100px; padding-bottom: max(100px, calc(env(safe-area-inset-bottom) + 80px)); }
+#landing-view header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 0 24px;
+}
+#landing-view h1 {
+  font-size: 2rem; font-weight: 800; letter-spacing: -0.5px;
+  background: linear-gradient(135deg, #00e676, #00b0ff);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+#routine-count { font-size: 0.8rem; color: var(--text-dim); }
+
+.header-actions { display: flex; align-items: center; gap: 10px; }
+.btn-upload {
+  padding: 8px 14px; border-radius: var(--radius-sm);
+  font-size: 0.8rem; font-weight: 600; color: var(--accent);
+  background: var(--surface); border: 1px solid var(--border);
+  transition: background 0.15s, border-color 0.15s; white-space: nowrap;
+}
+.btn-upload:active { background: var(--surface-active); border-color: var(--accent); }
+
+.empty-state {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 64px 24px; text-align: center; gap: 12px;
+}
+.empty-state .icon { font-size: 3rem; opacity: 0.3; }
+.empty-state p { color: var(--text-dim); font-size: 0.95rem; line-height: 1.5; }
+
+#routine-list { display: flex; flex-direction: column; gap: var(--gap-sm); }
+
+.routine-card {
+  background: var(--surface); border-radius: var(--radius); padding: 16px;
+  display: flex; align-items: center; gap: 12px; transition: background 0.15s;
+  border: 1px solid transparent;
+}
+.routine-card:active { background: var(--surface-active); }
+.routine-card .card-info { flex: 1; min-width: 0; }
+.routine-card .card-name { font-size: 1.05rem; font-weight: 600; }
+.routine-card .card-meta { font-size: 0.8rem; color: var(--text-dim); margin-top: 2px; }
+.routine-card .card-actions { display: flex; gap: 4px; flex-shrink: 0; }
+
+.icon-btn {
+  width: 44px; height: 44px; display: flex; align-items: center; justify-content: center;
+  border-radius: var(--radius-sm); font-size: 1.15rem; transition: background 0.15s;
+}
+.icon-btn:hover { background: var(--surface-hover); }
+.icon-btn:active { background: var(--surface-active); }
+.icon-btn.play { background: var(--accent); color: #000; }
+.icon-btn.play:hover { background: #00f57c; }
+.icon-btn.play:active { background: var(--accent-dim); }
+.icon-btn.danger:active { background: var(--danger); color: #fff; }
+
+/* ── Editor View ── */
+#editor-view { padding: 0 var(--gap) 100px; padding-bottom: max(100px, calc(env(safe-area-inset-bottom) + 80px)); }
+.editor-header {
+  display: flex; align-items: center; gap: 10px; padding: 12px 0 16px;
+  position: sticky; top: 0; background: #0a0a0f; z-index: 10;
+}
+.editor-header .back-btn {
+  width: 44px; height: 44px; display: flex; align-items: center; justify-content: center;
+  border-radius: var(--radius-sm); font-size: 1.2rem; flex-shrink: 0;
+}
+.editor-header .back-btn:active { background: var(--surface-active); }
+#routine-name-input {
+  flex: 1; font-size: 1.25rem; font-weight: 700; padding: 8px 12px;
+  background: var(--surface); border-radius: var(--radius-sm);
+  min-width: 0;
+}
+#routine-name-input::placeholder { color: var(--text-muted); }
+
+.editor-toolbar {
+  display: flex; align-items: center; gap: var(--gap-sm); padding: 8px 0 16px;
+  flex-wrap: wrap;
+}
+.editor-toolbar button {
+  padding: 10px 18px; border-radius: var(--radius-sm); font-size: 0.9rem; font-weight: 600;
+  transition: background 0.15s;
+}
+.btn-add { background: var(--surface); color: var(--accent); }
+.btn-add:active { background: var(--surface-active); }
+.btn-save { background: var(--accent); color: #000; }
+.btn-save:active { background: var(--accent-dim); }
+.btn-delete-routine {
+  color: var(--danger); font-size: 0.85rem; padding: 10px 0; text-align: left;
+}
+.btn-delete-routine:active { opacity: 0.7; }
+
+.drag-toggle-wrap {
+  display: flex; align-items: center; gap: 8px; margin-left: auto;
+  font-size: 0.8rem; color: var(--text-dim); user-select: none;
+}
+.drag-toggle-wrap input[type="checkbox"] {
+  width: 20px; height: 20px; accent-color: var(--accent); cursor: pointer;
+}
+
+#exercise-list { display: flex; flex-direction: column; gap: var(--gap-sm); padding-bottom: 16px; }
+
+.exercise-card {
+  background: var(--surface); border-radius: var(--radius); padding: 14px;
+  display: flex; flex-direction: column; gap: 10px;
+  border: 2px solid transparent; transition: border-color 0.2s, background 0.15s, opacity 0.2s;
+  position: relative;
+}
+.exercise-card.superset { border-color: #00b0ff; background: #0d111f; }
+.exercise-card.superset::before {
+  content: 'SUPERSET'; position: absolute; top: -9px; left: 12px;
+  background: #00b0ff; color: #000; font-size: 0.65rem; font-weight: 700;
+  padding: 2px 8px; border-radius: 4px; letter-spacing: 0.5px;
+}
+.exercise-card.dragging { opacity: 0.4; border-color: var(--accent); }
+.exercise-card.drag-over { border-color: var(--accent); }
+
+.card-row { display: flex; align-items: center; gap: 8px; }
+.card-row.top { justify-content: space-between; }
+
+.drag-handle {
+  font-size: 1.1rem; color: var(--text-muted); width: 32px; height: 32px;
+  display: flex; align-items: center; justify-content: center; cursor: grab;
+  visibility: hidden; opacity: 0; transition: visibility 0s 0.15s, opacity 0.15s;
+}
+.drag-enabled .drag-handle { visibility: visible; opacity: 1; transition: opacity 0.15s; }
+.drag-handle:active { cursor: grabbing; }
+
+.exercise-name-input {
+  flex: 1; font-size: 1rem; font-weight: 600; padding: 6px 10px;
+  background: var(--surface); border-radius: var(--radius-sm); min-width: 0;
+}
+.exercise-name-input::placeholder { color: var(--text-muted); }
+
+.card-row.fields { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 6px; }
+.field-group { display: flex; flex-direction: column; gap: 2px; }
+.field-group label {
+  font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;
+}
+.field-group input {
+  width: 100%; padding: 8px 6px; background: #1a1a30; border-radius: 6px;
+  font-size: 0.9rem; text-align: center; font-variant-numeric: tabular-nums;
+}
+.field-group input:focus { background: #222240; }
+
+.card-row.actions { justify-content: flex-end; gap: 8px; }
+.card-row.actions button {
+  font-size: 0.75rem; padding: 6px 12px; border-radius: 6px; font-weight: 600;
+  transition: background 0.15s;
+}
+.btn-superset { color: #00b0ff; background: transparent; }
+.btn-superset.active { background: #00b0ff; color: #000; }
+.btn-superset:active { opacity: 0.8; }
+.btn-remove-exercise { color: var(--danger); }
+.btn-remove-exercise:active { background: var(--danger); color: #fff; }
+
+/* ── Execution View ── */
+#execution-view {
+  align-items: center; justify-content: center; padding: 24px;
+  background: #0a0a0f; position: relative;
+}
+
+.timer-wrapper {
+  position: relative; width: min(280px, 65vw); aspect-ratio: 1;
+  display: flex; align-items: center; justify-content: center;
+}
+.timer-wrapper svg { width: 100%; height: 100%; position: absolute; top: 0; left: 0; }
+.timer-bg-circle { fill: none; stroke: #1a1a30; stroke-width: 10; }
+.timer-progress-circle {
+  fill: none; stroke: var(--accent); stroke-width: 10; stroke-linecap: round;
+  transform: rotate(-90deg); transform-origin: center;
+  transition: stroke-dashoffset 0.3s linear;
+}
+.timer-progress-circle.rest { stroke: #00b0ff; }
+.timer-progress-circle.transition { stroke: var(--warn); }
+
+.timer-text-wrap {
+  position: relative; z-index: 1; text-align: center; display: flex;
+  flex-direction: column; align-items: center; gap: 2px;
+}
+.timer-seconds { font-size: 4rem; font-weight: 800; letter-spacing: -1px; font-variant-numeric: tabular-nums; }
+.timer-label { font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; }
+
+.exe-info { text-align: center; margin-top: 32px; }
+.exe-exercise-name { font-size: 1.4rem; font-weight: 700; }
+.exe-set-info { font-size: 0.9rem; color: var(--text-dim); margin-top: 4px; }
+.exe-reps { font-size: 1rem; color: var(--text-dim); margin-top: 2px; }
+
+.exe-next {
+  font-size: 0.85rem; color: var(--text-dim); margin-top: 12px; text-align: center;
+}
+.exe-next span { color: var(--text); }
+
+/* ── Start Overlay ── */
+#start-overlay {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; background: #0a0a0f; z-index: 5;
+  gap: 24px; text-align: center; padding: 32px;
+}
+#start-overlay.hidden { display: none; }
+#start-overlay h2 { font-size: 1.6rem; }
+#start-overlay p { color: var(--text-dim); font-size: 0.95rem; line-height: 1.5; }
+#start-overlay .exe-routine-name { font-size: 1.1rem; color: var(--accent); font-weight: 600; }
+
+.btn-start {
+  width: 80px; height: 80px; border-radius: 50%; background: var(--accent); color: #000;
+  font-size: 1rem; font-weight: 800; display: flex; align-items: center; justify-content: center;
+  transition: transform 0.15s;
+}
+.btn-start:active { transform: scale(0.95); background: var(--accent-dim); }
+
+/* ── Execution Controls ── */
+.exe-controls {
+  display: flex; gap: 12px; margin-top: 32px; flex-wrap: wrap; justify-content: center;
+}
+.exe-controls button {
+  padding: 12px 24px; border-radius: var(--radius-sm); font-size: 0.9rem; font-weight: 600;
+  transition: background 0.15s; min-width: 80px;
+}
+.btn-pause { background: var(--surface); color: var(--text); }
+.btn-pause:active { background: var(--surface-active); }
+.btn-skip { background: var(--surface); color: var(--warn); }
+.btn-skip:active { background: var(--surface-active); }
+.btn-stop { background: transparent; color: var(--danger); border: 2px solid var(--danger) !important; }
+.btn-stop:active { background: var(--danger); color: #fff; }
+
+/* ── Complete Overlay ── */
+#complete-overlay {
+  position: absolute; inset: 0; display: none; flex-direction: column;
+  align-items: center; justify-content: center; background: #0a0a0f; z-index: 10;
+  gap: 16px; text-align: center; padding: 32px;
+}
+#complete-overlay.show { display: flex; }
+#complete-overlay .icon { font-size: 4rem; }
+#complete-overlay h2 { font-size: 1.6rem; }
+#complete-overlay p { color: var(--text-dim); }
+
+/* ── Stop Confirm Dialog ── */
+#stop-dialog {
+  position: fixed; inset: 0; display: none; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.75); z-index: 100; padding: 24px;
+}
+#stop-dialog.show { display: flex; }
+.dialog-box {
+  background: var(--surface); border-radius: var(--radius); padding: 24px;
+  text-align: center; max-width: 300px; width: 100%;
+}
+.dialog-box h3 { font-size: 1.1rem; margin-bottom: 8px; }
+.dialog-box p { color: var(--text-dim); font-size: 0.9rem; margin-bottom: 20px; }
+.dialog-buttons { display: flex; gap: 10px; justify-content: center; }
+.dialog-buttons button {
+  padding: 10px 24px; border-radius: var(--radius-sm); font-weight: 600; font-size: 0.9rem;
+}
+.dialog-cancel { background: var(--surface-hover); color: var(--text); }
+.dialog-cancel:active { background: var(--surface-active); }
+.dialog-confirm { background: var(--danger); color: #fff; }
+.dialog-confirm:active { background: var(--danger-hover); }
+
+/* ── Upload Dialog ── */
+#upload-dialog {
+  position: fixed; inset: 0; display: none; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.75); z-index: 100; padding: 24px;
+}
+#upload-dialog.show { display: flex; }
+#upload-textarea:focus { border-color: var(--accent); outline: none; }
+
+/* ── No routines in execution ── */
+#no-exercises-msg {
+  display: none; color: var(--text-dim); font-size: 1rem; text-align: center; padding: 32px;
+}
+#no-exercises-msg.show { display: block; }
+
+/* ── Media Queries ── */
+@media (min-width: 600px) {
+  #landing-view, #editor-view { max-width: 520px; margin: 0 auto; }
+  #routine-list { max-width: 520px; margin: 0 auto; }
+  .card-row.fields { grid-template-columns: 1fr 1fr 1fr 1fr; }
+}
+@media (min-width: 900px) {
+  #landing-view, #editor-view { max-width: 600px; }
+  #routine-list { max-width: 600px; }
+}
+
+/* ── Animations ── */
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+.timer-progress-circle.urgent { animation: pulse 0.5s infinite; stroke: var(--danger); }
+</style>
+</head>
+<body>
+
+<!-- ═══════════ LANDING VIEW ═══════════ -->
+<div id="landing-view" class="view active" role="main" aria-label="Routine Library">
+  <header>
+    <h1>MOTO FIT</h1>
+    <div class="header-actions">
+      <button class="btn-upload" id="btn-upload-routine" aria-label="Upload routine JSON">📂 Upload</button>
+      <span id="routine-count"></span>
+    </div>
+  </header>
+  <div id="routine-list" role="list" aria-label="Saved routines"></div>
+  <div class="empty-state" id="empty-state">
+    <div class="icon">🏋️</div>
+    <p>No routines yet.<br>Create your first workout routine to get started.</p>
+  </div>
+  <button class="icon-btn play" id="btn-new-routine" aria-label="Create new routine"
+    style="position:fixed;bottom:max(24px, calc(env(safe-area-inset-bottom) + 16px));right:24px;width:56px;height:56px;border-radius:50%;font-size:1.5rem;box-shadow:0 4px 20px rgba(0,230,118,0.3);z-index:20;">
+    +
+  </button>
+</div>
+
+<!-- ═══════════ EDITOR VIEW ═══════════ -->
+<div id="editor-view" class="view" role="main" aria-label="Edit Routine">
+  <div class="editor-header">
+    <button class="back-btn" id="btn-editor-back" aria-label="Back to routines">←</button>
+    <input type="text" id="routine-name-input" placeholder="Routine Name" aria-label="Routine name">
+  </div>
+  <div class="editor-toolbar">
+    <button class="btn-add" id="btn-add-exercise" aria-label="Add exercise">+ Add Exercise</button>
+    <label class="drag-toggle-wrap" aria-label="Toggle drag reorder">
+      <input type="checkbox" id="drag-toggle">
+      Unlock Drag
+    </label>
+    <button class="btn-save" id="btn-editor-save" aria-label="Save routine">Save</button>
+  </div>
+  <div id="exercise-list" role="list" aria-label="Exercises"></div>
+  <button class="btn-delete-routine" id="btn-delete-routine" aria-label="Delete routine">Delete Routine</button>
+</div>
+
+<!-- ═══════════ EXECUTION VIEW ═══════════ -->
+<div id="execution-view" class="view" role="main" aria-label="Workout Timer">
+  <div class="timer-wrapper" aria-live="assertive">
+    <svg viewBox="0 0 200 200" aria-hidden="true">
+      <circle class="timer-bg-circle" cx="100" cy="100" r="90"/>
+      <circle class="timer-progress-circle" id="timer-progress" cx="100" cy="100" r="90"
+        stroke-dasharray="565.4867" stroke-dashoffset="0"/>
+    </svg>
+    <div class="timer-text-wrap">
+      <div class="timer-seconds" id="timer-seconds" aria-live="polite">--</div>
+      <div class="timer-label" id="timer-label">WORK</div>
+    </div>
+  </div>
+  <div class="exe-info">
+    <div class="exe-exercise-name" id="exe-name">--</div>
+    <div class="exe-set-info" id="exe-set-info">--</div>
+    <div class="exe-reps" id="exe-reps">--</div>
+  </div>
+  <div class="exe-next" id="exe-next"></div>
+  <div class="exe-controls">
+    <button class="btn-pause" id="btn-pause" aria-label="Pause timer">Pause</button>
+    <button class="btn-skip" id="btn-skip" aria-label="Skip to next">Skip</button>
+    <button class="btn-stop" id="btn-stop" aria-label="Stop workout">Stop</button>
+  </div>
+
+  <!-- Start overlay -->
+  <div id="start-overlay">
+    <div class="exe-routine-name" id="start-routine-name"></div>
+    <p id="start-summary"></p>
+    <button class="btn-start" id="btn-start" aria-label="Start workout">▶</button>
+  </div>
+
+  <!-- Complete overlay -->
+  <div id="complete-overlay">
+    <div class="icon">🎯</div>
+    <h2>Workout Complete!</h2>
+    <p>Great work. Take a moment to recover.</p>
+    <button class="btn-save" id="btn-back-to-landing" aria-label="Back to routines">Back to Routines</button>
+  </div>
+
+  <!-- No exercises message -->
+  <div id="no-exercises-msg">No exercises in this routine. Add some exercises first.</div>
+</div>
+
+<!-- ═══════════ STOP DIALOG ═══════════ -->
+<div id="stop-dialog" role="dialog" aria-modal="true" aria-label="Confirm stop">
+  <div class="dialog-box">
+    <h3>Stop Workout?</h3>
+    <p>Current progress will be lost.</p>
+    <div class="dialog-buttons">
+      <button class="dialog-cancel" id="dialog-cancel">Cancel</button>
+      <button class="dialog-confirm" id="dialog-confirm">Stop</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ UPLOAD DIALOG ═══════════ -->
+<div id="upload-dialog" role="dialog" aria-modal="true" aria-label="Paste routine JSON">
+  <div class="dialog-box" style="max-width:360px;">
+    <h3>Import Routine</h3>
+    <p style="color:var(--text-dim);font-size:0.8rem;margin-bottom:12px;">Paste the JSON from GemIIni below.</p>
+    <textarea id="upload-textarea" placeholder='{"name":"My Routine","exercises":[...]}' rows="10"
+      style="width:100%;background:#1a1a30;color:#fff;border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;font-size:0.8rem;font-family:monospace;resize:vertical;"></textarea>
+    <div id="upload-error" style="color:var(--danger);font-size:0.75rem;margin-top:8px;display:none;"></div>
+    <div class="dialog-buttons" style="margin-top:16px;">
+      <button class="dialog-cancel" id="upload-cancel">Cancel</button>
+      <button class="dialog-confirm" id="upload-confirm" style="background:var(--accent);color:#000;">Import</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════
+   MOTO FIT — Offline Fitness Timer
+   Single-file, mobile-first, localStorage-backed
+   ═══════════════════════════════════════════════════════ */
+
+// ── State ──
+let routines = [];
+let editingId = null;
+let isDirty = false;
+
+// Execution state machine
+const State = { IDLE: 'idle', WORK_A: 'work_a', TRANSITION: 'transition', WORK_B: 'work_b', REST: 'rest', COMPLETE: 'complete' };
+let exe = {
+  routineId: null,
+  routineName: '',
+  exercises: [],
+  exIndex: 0,
+  setCurrent: 1,
+  state: State.IDLE,
+  remaining: 0,
+  totalDuration: 0,
+  paused: false,
+  rafId: null,
+  startTime: 0,
+  pausedRemaining: 0,
+  _lastBeepSecond: 0,
+};
+
+// ── DOM refs ──
+const $ = (s) => document.querySelector(s);
+const $$ = (s) => document.querySelectorAll(s);
+
+const landingView = $('#landing-view');
+const editorView = $('#editor-view');
+const executionView = $('#execution-view');
+const routineList = $('#routine-list');
+const routineCount = $('#routine-count');
+const emptyState = $('#empty-state');
+const routineNameInput = $('#routine-name-input');
+const exerciseList = $('#exercise-list');
+const dragToggle = $('#drag-toggle');
+const timerProgress = $('#timer-progress');
+const timerSeconds = $('#timer-seconds');
+const timerLabel = $('#timer-label');
+const exeName = $('#exe-name');
+const exeSetInfo = $('#exe-set-info');
+const exeReps = $('#exe-reps');
+const exeNext = $('#exe-next');
+const startOverlay = $('#start-overlay');
+const completeOverlay = $('#complete-overlay');
+const stopDialog = $('#stop-dialog');
+
+// ── Audio Engine ──
+let audioCtx = null;
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+function beep(freq = 800, duration = 0.12, vol = 0.25) {
+  try {
+    const ctx = getAudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.type = 'sine'; osc.frequency.value = freq;
+    gain.gain.setValueAtTime(vol, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + duration);
+  } catch(e) { /* audio not available */ }
+}
+
+// ── Persistence ──
+const STORAGE_KEY = 'motofit_routines';
+function loadRoutines() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    routines = raw ? JSON.parse(raw) : [];
+  } catch(e) { routines = []; }
+}
+function saveRoutines() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(routines));
+}
+function generateId() { return crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2); }
+
+// ── View Switching ──
+function showView(view, data) {
+  // Clean up execution state when leaving execution view
+  if (executionView.classList.contains('active')) {
+    resetExeState();
+    completeOverlay.classList.remove('show');
+    startOverlay.classList.remove('hidden');
+    const noExMsg2 = $('#no-exercises-msg');
+    if (noExMsg2) noExMsg2.classList.remove('show');
+  }
+
+  [landingView, editorView, executionView].forEach(v => v.classList.remove('active'));
+  if (view === 'landing') { landingView.classList.add('active'); renderLanding(); }
+  else if (view === 'editor') { editorView.classList.add('active'); openEditor(data); }
+  else if (view === 'execution') { executionView.classList.add('active'); prepareExecution(data); }
+}
+
+// ── Landing View ──
+function renderLanding() {
+  routineList.innerHTML = '';
+  const count = routines.length;
+  routineCount.textContent = count ? `${count} routine${count > 1 ? 's' : ''}` : '';
+
+  if (!count) { emptyState.style.display = 'flex'; return; }
+  emptyState.style.display = 'none';
+
+  routines.forEach(r => {
+    const card = document.createElement('div');
+    card.className = 'routine-card';
+    const exercises = r.exercises || [];
+    const totalSets = exercises.reduce((s, e) => s + (e.sets || 0), 0);
+    card.innerHTML = `
+      <div class="card-info">
+        <div class="card-name">${escHtml(r.name || 'Untitled')}</div>
+        <div class="card-meta">${exercises.length} exercise${exercises.length !== 1 ? 's' : ''} · ${totalSets} total sets</div>
+      </div>
+      <div class="card-actions">
+        <button class="icon-btn play" aria-label="Start ${escHtml(r.name)}" data-action="play" data-id="${r.id}">▶</button>
+        <button class="icon-btn" aria-label="Edit ${escHtml(r.name)}" data-action="edit" data-id="${r.id}">✎</button>
+        <button class="icon-btn danger" aria-label="Delete ${escHtml(r.name)}" data-action="delete" data-id="${r.id}">✕</button>
+      </div>`;
+    card.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-action]');
+      if (!btn) return;
+      const action = btn.dataset.action;
+      const id = btn.dataset.id;
+      if (action === 'play') showView('execution', id);
+      else if (action === 'edit') showView('editor', id);
+      else if (action === 'delete') deleteRoutine(id);
+    });
+    routineList.appendChild(card);
+  });
+}
+
+function deleteRoutine(id) {
+  if (!confirm('Delete this routine? This cannot be undone.')) return;
+  routines = routines.filter(r => r.id !== id);
+  saveRoutines();
+  renderLanding();
+}
+
+// ── Editor View ──
+function openEditor(id) {
+  editingId = id;
+  isDirty = false;
+  const routine = id ? routines.find(r => r.id === id) : null;
+
+  if (routine) {
+    routineNameInput.value = routine.name || '';
+    // deep-clone exercises for editing
+    const exes = (routine.exercises || []).map(e => ({
+      id: e.id || generateId(),
+      name: e.name || '',
+      reps: e.reps || 0,
+      sets: e.sets || 1,
+      duration: e.duration || 30,
+      restDuration: e.restDuration || 30,
+      superset: !!e.superset,
+    }));
+    routine._editExes = exes;
+  } else {
+    // new routine
+    const newId = generateId();
+    editingId = newId;
+    routineNameInput.value = '';
+    const newRoutine = {
+      id: newId,
+      name: '',
+      exercises: [],
+      createdAt: Date.now(),
+      _editExes: [{ id: generateId(), name: '', reps: 0, sets: 3, duration: 45, restDuration: 30, superset: false }],
+    };
+    routines.push(newRoutine);
+    isDirty = true;
+  }
+  dragToggle.checked = false;
+  exerciseList.classList.remove('drag-enabled');
+  renderEditor();
+}
+
+function getEditingRoutine() {
+  return routines.find(r => r.id === editingId);
+}
+
+function renderEditor() {
+  const r = getEditingRoutine();
+  if (!r) return;
+  const exes = r._editExes || [];
+
+  exerciseList.innerHTML = '';
+  exes.forEach((ex, i) => {
+    const card = document.createElement('div');
+    card.className = 'exercise-card' + (ex.superset ? ' superset' : '');
+    card.draggable = dragToggle.checked;
+    card.dataset.index = i;
+    card.innerHTML = `
+      <div class="card-row top">
+        <span class="drag-handle" aria-label="Drag to reorder">⠿</span>
+        <input type="text" class="exercise-name-input" value="${escHtml(ex.name)}" placeholder="Exercise name" aria-label="Exercise name" data-field="name" data-index="${i}">
+      </div>
+      <div class="card-row fields">
+        <div class="field-group"><label>Reps</label><input type="number" value="${ex.reps}" min="0" data-field="reps" data-index="${i}" aria-label="Target reps"></div>
+        <div class="field-group"><label>Sets</label><input type="number" value="${ex.sets}" min="1" data-field="sets" data-index="${i}" aria-label="Set count"></div>
+        <div class="field-group"><label>Work (s)</label><input type="number" value="${ex.duration}" min="1" data-field="duration" data-index="${i}" aria-label="Work duration in seconds"></div>
+        <div class="field-group"><label>Rest (s)</label><input type="number" value="${ex.restDuration}" min="0" data-field="restDuration" data-index="${i}" aria-label="Rest duration in seconds"></div>
+      </div>
+      <div class="card-row actions">
+        <button class="btn-superset${ex.superset ? ' active' : ''}" data-action="superset" data-index="${i}" aria-label="Toggle superset">⇄ Superset</button>
+        <button class="btn-remove-exercise" data-action="remove" data-index="${i}" aria-label="Remove exercise">✕ Remove</button>
+      </div>`;
+    card.addEventListener('click', handleEditorClick);
+    card.addEventListener('input', handleEditorInput);
+    card.addEventListener('dragstart', handleDragStart);
+    card.addEventListener('dragover', handleDragOver);
+    card.addEventListener('dragleave', handleDragLeave);
+    card.addEventListener('drop', handleDrop);
+    card.addEventListener('dragend', handleDragEnd);
+    exerciseList.appendChild(card);
+  });
+}
+
+function handleEditorClick(e) {
+  const btn = e.target.closest('[data-action]');
+  if (!btn) return;
+  const idx = parseInt(btn.dataset.index);
+  const r = getEditingRoutine();
+  if (!r) return;
+
+  if (btn.dataset.action === 'superset') {
+    toggleSuperset(idx);
+    renderEditor();
+  } else if (btn.dataset.action === 'remove') {
+    removeExercise(idx);
+    renderEditor();
+  }
+}
+
+function handleEditorInput(e) {
+  const inp = e.target.closest('[data-field]');
+  if (!inp) return;
+  const idx = parseInt(inp.dataset.index);
+  const field = inp.dataset.field;
+  const r = getEditingRoutine();
+  if (!r || !r._editExes[idx]) return;
+  let val = inp.value;
+  if (field === 'name') { r._editExes[idx].name = val; }
+  else { r._editExes[idx][field] = parseInt(val) || 0; if (field === 'sets' && r._editExes[idx][field] < 1) r._editExes[idx][field] = 1; }
+  isDirty = true;
+}
+
+function addExercise() {
+  const r = getEditingRoutine();
+  if (!r) return;
+  r._editExes.push({ id: generateId(), name: '', reps: 0, sets: 3, duration: 45, restDuration: 30, superset: false });
+  isDirty = true;
+  renderEditor();
+}
+
+function removeExercise(idx) {
+  const r = getEditingRoutine();
+  if (!r) return;
+  if (r._editExes.length <= 1) return; // keep at least one
+  const wasSuperset = r._editExes[idx].superset;
+  r._editExes.splice(idx, 1);
+  // if removed card was superset, clear partner's superset too
+  if (wasSuperset && idx < r._editExes.length) {
+    r._editExes[idx].superset = false;
+  }
+  isDirty = true;
+}
+
+function toggleSuperset(idx) {
+  const r = getEditingRoutine();
+  if (!r) return;
+  const exes = r._editExes;
+  if (idx >= exes.length - 1) return; // last exercise can't start a superset
+  const current = exes[idx].superset;
+  // toggle off: clear both
+  if (current) {
+    exes[idx].superset = false;
+    if (idx + 1 < exes.length) exes[idx + 1].superset = false;
+  } else {
+    // toggle on: pair with next
+    // first clear any existing superset that involves idx+1
+    if (exes[idx + 1].superset) {
+      exes[idx + 1].superset = false;
+      if (idx + 2 < exes.length) exes[idx + 2].superset = false;
+    }
+    exes[idx].superset = true;
+    exes[idx + 1].superset = true;
+  }
+  isDirty = true;
+}
+
+// ── Drag and Drop ──
+let dragIndex = null;
+
+function handleDragStart(e) {
+  if (!dragToggle.checked) { e.preventDefault(); return; }
+  dragIndex = parseInt(e.currentTarget.dataset.index);
+  e.currentTarget.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', dragIndex.toString());
+}
+
+function handleDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  e.currentTarget.classList.add('drag-over');
+}
+
+function handleDragLeave(e) {
+  e.currentTarget.classList.remove('drag-over');
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  const targetIdx = parseInt(e.currentTarget.dataset.index);
+  if (dragIndex === null || dragIndex === targetIdx) return;
+
+  const r = getEditingRoutine();
+  if (!r) return;
+  const exes = r._editExes;
+
+  // Clear supersets involving moved cards
+  const clearPair = (i) => {
+    if (exes[i] && exes[i].superset) {
+      exes[i].superset = false;
+      if (i + 1 < exes.length && exes[i + 1].superset) exes[i + 1].superset = false;
+      if (i > 0 && exes[i - 1] && exes[i - 1].superset && exes[i].superset) {
+        // also check if i-1 was paired with i
+        if (exes[i - 1].superset) { exes[i - 1].superset = false; exes[i].superset = false; }
+      }
+    }
+  };
+
+  // Naive: clear all supersets around moved range to be safe
+  for (let i = 0; i < exes.length; i++) exes[i].superset = false;
+
+  const [moved] = exes.splice(dragIndex, 1);
+  exes.splice(targetIdx, 0, moved);
+  isDirty = true;
+  renderEditor();
+}
+
+function handleDragEnd(e) {
+  e.currentTarget.classList.remove('dragging');
+  dragIndex = null;
+  $$('.exercise-card').forEach(c => c.classList.remove('drag-over'));
+}
+
+// ── Editor Save ──
+function saveEditor() {
+  const r = getEditingRoutine();
+  if (!r) return;
+  r.name = routineNameInput.value.trim() || 'Untitled';
+  r.exercises = (r._editExes || []).map(e => ({
+    id: e.id,
+    name: e.name.trim(),
+    reps: e.reps || 0,
+    sets: e.sets || 1,
+    duration: e.duration || 30,
+    restDuration: e.restDuration || 30,
+    superset: !!e.superset,
+  }));
+  delete r._editExes;
+  isDirty = false;
+  saveRoutines();
+  showView('landing');
+}
+
+// ── Execution Engine ──
+function buildExercisePlan(routine) {
+  // Flatten exercises, treating superset pairs as single execution units
+  const plan = [];
+  const exes = routine.exercises || [];
+  let i = 0;
+  while (i < exes.length) {
+    const a = exes[i];
+    if (a.superset && i + 1 < exes.length) {
+      const b = exes[i + 1];
+      plan.push({
+        type: 'superset',
+        nameA: a.name || 'Exercise A',
+        nameB: b.name || 'Exercise B',
+        repsA: a.reps || 0,
+        repsB: b.reps || 0,
+        sets: a.sets || 1,
+        workA: a.duration || 30,
+        workB: b.duration || 30,
+        rest: a.restDuration || 30,
+        transition: 5,
+      });
+      i += 2;
+    } else {
+      plan.push({
+        type: 'single',
+        name: a.name || 'Exercise',
+        reps: a.reps || 0,
+        sets: a.sets || 1,
+        work: a.duration || 30,
+        rest: a.restDuration || 30,
+      });
+      i += 1;
+    }
+  }
+  return plan;
+}
+
+function resetExeState() {
+  // Kill any running timer
+  if (exe.rafId) { cancelAnimationFrame(exe.rafId); exe.rafId = null; }
+  // Reset the entire execution state machine
+  exe.routineId = null;
+  exe.routineName = '';
+  exe.exercises = [];
+  exe.exIndex = 0;
+  exe.setCurrent = 1;
+  exe.state = State.IDLE;
+  exe.remaining = 0;
+  exe.totalDuration = 0;
+  exe.paused = false;
+  exe.startTime = 0;
+  exe.pausedRemaining = 0;
+  exe._lastBeepSecond = 0;
+}
+
+function prepareExecution(routineId) {
+  // ALWAYS reset state first — prevents leaks from previous sessions
+  resetExeState();
+
+  // Force overlays to known state BEFORE anything else
+  completeOverlay.classList.remove('show');
+  startOverlay.classList.remove('hidden');
+
+  const routine = routines.find(r => r.id === routineId);
+  if (!routine) {
+    console.error('MOTO FIT: Routine not found:', routineId);
+    showView('landing');
+    return;
+  }
+
+  const plan = buildExercisePlan(routine);
+  if (!plan.length) {
+    console.error('MOTO FIT: Routine has no exercises:', routine.name);
+    const noExMsgErr = $('#no-exercises-msg');
+    if (noExMsgErr) noExMsgErr.classList.add('show');
+    hideExeInfo();
+    return;
+  }
+
+  const noExMsg = $('#no-exercises-msg');
+  if (noExMsg) noExMsg.classList.remove('show');
+
+  exe.routineId = routineId;
+  exe.routineName = routine.name || 'Workout';
+  exe.exercises = plan;
+  exe.exIndex = 0;
+  exe.setCurrent = 1;
+  exe.state = State.IDLE;
+
+  $('#start-routine-name').textContent = exe.routineName;
+  const totalEx = plan.length;
+  const totalSets = plan.reduce((s, u) => s + (u.sets || 0), 0);
+  $('#start-summary').textContent = `${totalEx} exercise${totalEx !== 1 ? 's' : ''} · ${totalSets} total sets`;
+  hideExeInfo();
+}
+
+function hideExeInfo() {
+  exeName.textContent = '--';
+  exeSetInfo.textContent = '--';
+  exeReps.textContent = '--';
+  exeNext.textContent = '';
+  timerSeconds.textContent = '--';
+  timerLabel.textContent = 'READY';
+  timerProgress.style.strokeDashoffset = '0';
+  timerProgress.classList.remove('rest', 'transition', 'urgent');
+}
+
+function startWorkout() {
+  startOverlay.classList.add('hidden');
+  resumeAudio(); // unlock AudioContext on user gesture
+  // 3-second countdown before first exercise
+  startCountdown(3, () => advanceToNext());
+}
+
+function resumeAudio() {
+  try { const ctx = getAudioCtx(); if (ctx.state === 'suspended') ctx.resume(); } catch(e) {}
+}
+
+function startCountdown(seconds, onDone) {
+  exe.state = State.IDLE;
+  exe.remaining = seconds;
+  exe.totalDuration = seconds;
+  exe.paused = false;
+  exe.startTime = performance.now();
+  timerLabel.textContent = 'GET READY';
+  timerProgress.classList.remove('rest', 'transition', 'urgent');
+  exeName.textContent = '';
+  exeSetInfo.textContent = '';
+  exeReps.textContent = '';
+  exeNext.textContent = '';
+
+  if (exe.rafId) cancelAnimationFrame(exe.rafId);
+
+  function countTick() {
+    if (exe.paused || exe.state === State.COMPLETE) return;
+    const elapsed = (performance.now() - exe.startTime) / 1000;
+    const remaining = Math.max(0, seconds - elapsed);
+    exe.remaining = remaining;
+    timerSeconds.textContent = Math.ceil(remaining);
+    const frac = seconds > 0 ? remaining / seconds : 0;
+    const circumference = 565.4867;
+    timerProgress.style.strokeDashoffset = (circumference * (1 - frac)).toFixed(2);
+
+    const currWhole = Math.ceil(remaining);
+    if (currWhole > 0 && currWhole !== exe._lastBeepSecond) {
+      exe._lastBeepSecond = currWhole;
+      beep(660, 0.1, 0.15);
+    }
+
+    if (remaining <= 0) {
+      beep(1000, 0.15, 0.3);
+      onDone();
+      return;
+    }
+    exe.rafId = requestAnimationFrame(countTick);
+  }
+
+  renderTimer();
+  countTick();
+}
+
+function advanceToNext() {
+  if (exe.state === State.COMPLETE) return;
+
+  if (!exe.exercises || exe.exercises.length === 0 || exe.exIndex >= exe.exercises.length) {
+    workoutComplete();
+    return;
+  }
+  const unit = exe.exercises[exe.exIndex];
+  if (!unit) {
+    console.error('MOTO FIT: advanceToNext — unit is null/undefined at index', exe.exIndex);
+    workoutComplete();
+    return;
+  }
+  exe.setCurrent = 1;
+  if (unit.type === 'superset') {
+    exe.state = State.WORK_A;
+    exe.totalDuration = unit.workA || 30;
+    updateExeDisplay(unit, 'A');
+  } else {
+    exe.state = State.WORK_A;
+    exe.totalDuration = unit.work || 30;
+    updateExeDisplay(unit, '');
+  }
+  startTimer(exe.totalDuration);
+}
+
+function updateExeDisplay(unit, phase) {
+  const state = exe.state;
+  let nextHtml = '';
+
+  if (unit.type === 'superset') {
+    const name = phase === 'A' ? unit.nameA : unit.nameB;
+    const reps = phase === 'A' ? unit.repsA : unit.repsB;
+    exeName.textContent = name;
+    exeSetInfo.textContent = `Set ${exe.setCurrent}/${unit.sets}`;
+    exeReps.textContent = reps ? `${reps} reps` : '';
+
+    if (state === State.WORK_A) {
+      nextHtml = `Next: <span>${escHtml(unit.nameB)}</span> (5s transition)`;
+    } else if (state === State.TRANSITION) {
+      nextHtml = `Next: <span>${escHtml(unit.nameB)}</span> (work)`;
+    } else if (state === State.WORK_B) {
+      nextHtml = exe.setCurrent < unit.sets
+        ? `Next: <span>Rest ${unit.rest}s</span>`
+        : `Next: <span>${exe.exIndex + 1 < exe.exercises.length ? 'Next exercise' : 'Complete!'}</span>`;
+    } else if (state === State.REST) {
+      nextHtml = `Next: <span>${escHtml(unit.nameA)}</span> (work)`;
+    }
+  } else {
+    exeName.textContent = unit.name;
+    exeSetInfo.textContent = `Set ${exe.setCurrent}/${unit.sets}`;
+    exeReps.textContent = unit.reps ? `${unit.reps} reps` : '';
+
+    if (state === State.WORK_A) {
+      nextHtml = unit.sets > 1
+        ? `Next: <span>Rest ${unit.rest}s</span>`
+        : `Next: <span>${exe.exIndex + 1 < exe.exercises.length ? 'Next exercise' : 'Complete!'}</span>`;
+    } else if (state === State.REST) {
+      nextHtml = `Next: <span>${escHtml(unit.name)}</span> (Set ${exe.setCurrent}/${unit.sets})`;
+    }
+  }
+  exeNext.innerHTML = nextHtml;
+  updateTimerLabel();
+}
+
+function updateTimerLabel() {
+  switch (exe.state) {
+    case State.WORK_A: timerLabel.textContent = 'WORK'; break;
+    case State.WORK_B: timerLabel.textContent = 'WORK'; break;
+    case State.TRANSITION: timerLabel.textContent = 'TRANSITION'; break;
+    case State.REST: timerLabel.textContent = 'REST'; break;
+    default: timerLabel.textContent = '';
+  }
+  timerProgress.classList.remove('rest', 'transition', 'urgent');
+  if (exe.state === State.REST) timerProgress.classList.add('rest');
+  if (exe.state === State.TRANSITION) timerProgress.classList.add('transition');
+}
+
+function startTimer(total) {
+  exe.totalDuration = total;
+  exe.remaining = total;
+  exe.paused = false;
+  exe.startTime = performance.now();
+  exe._lastBeepSecond = 0;
+  renderTimer();
+  if (exe.rafId) cancelAnimationFrame(exe.rafId);
+  tick();
+}
+
+function tick() {
+  // Defensive: prevent tick on invalid state
+  if (exe.paused || exe.state === State.COMPLETE || exe.state === State.IDLE) return;
+  if (!exe.totalDuration || exe.totalDuration <= 0) {
+    console.error('MOTO FIT: tick() called with invalid totalDuration:', exe.totalDuration);
+    handleTimerEnd();
+    return;
+  }
+  const elapsed = (performance.now() - exe.startTime) / 1000;
+  const remaining = Math.max(0, exe.totalDuration - elapsed);
+  exe.remaining = remaining;
+  renderTimer();
+
+  // Beep at T-5 each second
+  const currWhole = Math.ceil(remaining);
+  if (currWhole <= 5 && currWhole > 0 && currWhole !== exe._lastBeepSecond) {
+    exe._lastBeepSecond = currWhole;
+    const freq = exe.state === State.REST ? 600 : 880;
+    beep(freq, 0.1, 0.2);
+  }
+
+  if (remaining <= 0) {
+    handleTimerEnd();
+    return;
+  }
+  exe.rafId = requestAnimationFrame(tick);
+}
+
+function renderTimer() {
+  const r = exe.remaining;
+  const t = exe.totalDuration;
+  const frac = t > 0 ? r / t : 0;
+  const circumference = 565.4867;
+
+  timerSeconds.textContent = Math.ceil(r);
+  timerProgress.style.strokeDashoffset = (circumference * (1 - frac)).toFixed(2);
+
+  if (r <= 5 && r > 0) {
+    timerProgress.classList.add('urgent');
+  } else {
+    timerProgress.classList.remove('urgent');
+  }
+}
+
+function handleTimerEnd() {
+  if (exe.state === State.COMPLETE || exe.state === State.IDLE) return;
+
+  beep(1000, 0.15, 0.3); // distinct end-of-interval beep
+  exe._lastBeepSecond = 0; // reset beep counter for next interval
+  const unit = exe.exercises[exe.exIndex];
+
+  if (unit.type === 'superset') {
+    if (exe.state === State.WORK_A) {
+      exe.state = State.TRANSITION;
+      exe.totalDuration = unit.transition;
+      updateExeDisplay(unit, 'A');
+      updateTimerLabel();
+      startTimer(unit.transition);
+    } else if (exe.state === State.TRANSITION) {
+      exe.state = State.WORK_B;
+      exe.totalDuration = unit.workB;
+      updateExeDisplay(unit, 'B');
+      updateTimerLabel();
+      startTimer(unit.workB);
+    } else if (exe.state === State.WORK_B) {
+      exe.setCurrent++;
+      if (exe.setCurrent <= unit.sets) {
+        exe.state = State.REST;
+        exe.totalDuration = unit.rest;
+        updateExeDisplay(unit, 'B');
+        updateTimerLabel();
+        startTimer(unit.rest);
+      } else {
+        exe.exIndex++;
+        advanceToNext();
+      }
+    } else if (exe.state === State.REST) {
+      exe.state = State.WORK_A;
+      exe.totalDuration = unit.workA;
+      updateExeDisplay(unit, 'A');
+      updateTimerLabel();
+      startTimer(unit.workA);
+    }
+  } else {
+    // single exercise
+    if (exe.state === State.WORK_A) {
+      exe.setCurrent++;
+      if (exe.setCurrent <= unit.sets) {
+        exe.state = State.REST;
+        exe.totalDuration = unit.rest;
+        updateExeDisplay(unit, '');
+        updateTimerLabel();
+        startTimer(unit.rest);
+      } else {
+        exe.exIndex++;
+        advanceToNext();
+      }
+    } else if (exe.state === State.REST) {
+      exe.state = State.WORK_A;
+      exe.totalDuration = unit.work;
+      updateExeDisplay(unit, '');
+      updateTimerLabel();
+      startTimer(unit.work);
+    }
+  }
+}
+
+function pauseResume() {
+  if (exe.state === State.IDLE || exe.state === State.COMPLETE) return;
+  if (exe.paused) {
+    exe.paused = false;
+    exe.startTime = performance.now() - ((exe.totalDuration - exe.pausedRemaining) * 1000);
+    tick();
+    $('#btn-pause').textContent = 'Pause';
+  } else {
+    exe.paused = true;
+    exe.pausedRemaining = exe.remaining;
+    if (exe.rafId) { cancelAnimationFrame(exe.rafId); exe.rafId = null; }
+    $('#btn-pause').textContent = 'Resume';
+  }
+}
+
+function skipCurrent() {
+  if (exe.state === State.IDLE || exe.state === State.COMPLETE) return;
+  if (exe.rafId) { cancelAnimationFrame(exe.rafId); exe.rafId = null; }
+  const unit = exe.exercises[exe.exIndex];
+  // Skip to next exercise entirely
+  exe.exIndex++;
+  if (exe.paused) { exe.paused = false; $('#btn-pause').textContent = 'Pause'; }
+  advanceToNext();
+}
+
+function stopWorkout() {
+  if (exe.rafId) { cancelAnimationFrame(exe.rafId); exe.rafId = null; }
+  exe.state = State.IDLE;
+  exe.paused = false;
+  $('#btn-pause').textContent = 'Pause';
+  stopDialog.classList.remove('show');
+  showView('landing');
+}
+
+function workoutComplete() {
+  exe.state = State.COMPLETE;
+  if (exe.rafId) { cancelAnimationFrame(exe.rafId); exe.rafId = null; }
+  completeOverlay.classList.add('show');
+  hideExeInfo();
+  timerSeconds.textContent = '✓';
+  timerLabel.textContent = 'DONE';
+  timerProgress.style.strokeDashoffset = '565.4867';
+  timerProgress.classList.remove('rest', 'transition', 'urgent');
+  beep(1200, 0.2, 0.3);
+  setTimeout(() => beep(1400, 0.2, 0.3), 200);
+}
+
+// ── JSON Upload ──
+function showUploadDialog() {
+  document.getElementById('upload-textarea').value = '';
+  document.getElementById('upload-error').style.display = 'none';
+  document.getElementById('upload-dialog').classList.add('show');
+  setTimeout(function() { document.getElementById('upload-textarea').focus(); }, 100);
+}
+
+function hideUploadDialog() {
+  document.getElementById('upload-dialog').classList.remove('show');
+}
+
+function importFromPaste() {
+  var textarea = document.getElementById('upload-textarea');
+  var errorEl = document.getElementById('upload-error');
+  var raw = textarea.value.trim();
+  if (!raw) {
+    errorEl.textContent = 'Paste a JSON routine first.';
+    errorEl.style.display = 'block';
+    return;
+  }
+  var json;
+  try { json = JSON.parse(raw); } catch (e) {
+    errorEl.textContent = 'Invalid JSON. Check for missing quotes or trailing commas.';
+    errorEl.style.display = 'block';
+    return;
+  }
+  var result = validateUploadedRoutine(json);
+  if (result.error) {
+    errorEl.textContent = result.error;
+    errorEl.style.display = 'block';
+    return;
+  }
+  hideUploadDialog();
+  importRoutine(result.routine);
+}
+
+function validateUploadedRoutine(json) {
+  if (!json || typeof json !== 'object' || Array.isArray(json)) {
+    return { error: 'Root must be a JSON object, not an array.' };
+  }
+  if (!json.name || typeof json.name !== 'string' || !json.name.trim()) {
+    return { error: '"name" is required and must be a non-empty string.' };
+  }
+  if (!Array.isArray(json.exercises) || json.exercises.length === 0) {
+    return { error: '"exercises" must be a non-empty array.' };
+  }
+  var exercises = [];
+  for (var i = 0; i < json.exercises.length; i++) {
+    var ex = json.exercises[i];
+    var pfx = 'Exercise #' + (i + 1);
+    if (!ex || typeof ex !== 'object') {
+      return { error: pfx + ': must be an object.' };
+    }
+    if (!ex.name || typeof ex.name !== 'string' || !ex.name.trim()) {
+      return { error: pfx + ': "name" is required and must be a non-empty string.' };
+    }
+    if (ex.reps !== undefined && (typeof ex.reps !== 'number' || ex.reps < 0 || !isFinite(ex.reps))) {
+      return { error: pfx + ': "reps" must be a number >= 0.' };
+    }
+    if (typeof ex.sets !== 'number' || ex.sets < 1 || !isFinite(ex.sets)) {
+      return { error: pfx + ': "sets" is required and must be a number >= 1.' };
+    }
+    if (typeof ex.duration !== 'number' || ex.duration < 1 || !isFinite(ex.duration)) {
+      return { error: pfx + ': "duration" is required and must be a number >= 1.' };
+    }
+    if (typeof ex.restDuration !== 'number' || ex.restDuration < 0 || !isFinite(ex.restDuration)) {
+      return { error: pfx + ': "restDuration" is required and must be a number >= 0.' };
+    }
+    var isSuperset = ex.superset === true;
+    if (isSuperset && i >= json.exercises.length - 1) {
+      return { error: pfx + ': "superset" is true but there is no next exercise to pair with.' };
+    }
+    exercises.push({
+      id: generateId(),
+      name: ex.name.trim(),
+      reps: typeof ex.reps === 'number' ? ex.reps : 0,
+      sets: ex.sets,
+      duration: ex.duration,
+      restDuration: ex.restDuration,
+      superset: isSuperset,
+    });
+  }
+  // Enforce superset pairing: if exercise i is superset, i+1 must be too
+  for (var j = 0; j < exercises.length; j++) {
+    if (exercises[j].superset && j + 1 < exercises.length) {
+      exercises[j + 1].superset = true;
+    }
+  }
+  if (exercises.length > 0 && exercises[exercises.length - 1].superset) {
+    exercises[exercises.length - 1].superset = false;
+  }
+  return { routine: { name: json.name.trim(), exercises: exercises } };
+}
+
+function importRoutine(routineData) {
+  var routine = {
+    id: generateId(),
+    name: routineData.name,
+    exercises: routineData.exercises,
+    createdAt: Date.now(),
+  };
+  routines.push(routine);
+  saveRoutines();
+  renderLanding();
+}
+
+// ── Utilities ──
+function escHtml(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+// ── Event Bindings ──
+$('#btn-new-routine').addEventListener('click', () => showView('editor', null));
+$('#btn-editor-back').addEventListener('click', () => {
+  if (isDirty) { if (confirm('You have unsaved changes. Discard?')) showView('landing'); }
+  else showView('landing');
+});
+$('#btn-editor-save').addEventListener('click', saveEditor);
+$('#btn-add-exercise').addEventListener('click', addExercise);
+$('#btn-delete-routine').addEventListener('click', () => {
+  const r = getEditingRoutine();
+  if (!r) return;
+  if (confirm('Delete this routine? This cannot be undone.')) {
+    routines = routines.filter(r => r.id !== editingId);
+    saveRoutines();
+    showView('landing');
+  }
+});
+
+dragToggle.addEventListener('change', () => {
+  if (dragToggle.checked) {
+    exerciseList.classList.add('drag-enabled');
+  } else {
+    exerciseList.classList.remove('drag-enabled');
+  }
+  renderEditor();
+});
+
+$('#btn-start').addEventListener('click', startWorkout);
+$('#btn-pause').addEventListener('click', pauseResume);
+$('#btn-skip').addEventListener('click', skipCurrent);
+$('#btn-stop').addEventListener('click', () => { stopDialog.classList.add('show'); });
+$('#btn-upload-routine').addEventListener('click', showUploadDialog);
+$('#upload-confirm').addEventListener('click', importFromPaste);
+$('#upload-cancel').addEventListener('click', hideUploadDialog);
+$('#dialog-cancel').addEventListener('click', () => { stopDialog.classList.remove('show'); });
+$('#dialog-confirm').addEventListener('click', stopWorkout);
+$('#btn-back-to-landing').addEventListener('click', () => showView('landing'));
+
+// Keyboard shortcuts during execution
+document.addEventListener('keydown', (e) => {
+  if (!executionView.classList.contains('active')) return;
+  if (e.key === ' ' || e.code === 'Space') { e.preventDefault(); pauseResume(); }
+  if (e.key === 'ArrowRight') { e.preventDefault(); skipCurrent(); }
+});
+
+// Warn before leaving during workout
+window.addEventListener('beforeunload', (e) => {
+  if (exe.state !== State.IDLE && exe.state !== State.COMPLETE) {
+    e.preventDefault();
+    e.returnValue = '';
+  }
+});
+
+// ── Init ──
+loadRoutines();
+renderLanding();
+
+// ── PWA Setup (self-contained, no external files needed) ──
+(function() {
+  // Create manifest as a blob — no manifest.json file required
+  var manifest = {
+    name: 'MOTO FIT',
+    short_name: 'MOTO FIT',
+    description: 'Offline fitness timer',
+    start_url: location.href,
+    display: 'standalone',
+    orientation: 'portrait',
+    theme_color: '#0a0a0f',
+    background_color: '#0a0a0f',
+    icons: [
+      { src: 'icon-192.png', sizes: '192x192', type: 'image/png' },
+      { src: 'icon-512.png', sizes: '512x512', type: 'image/png' }
+    ]
+  };
+  var blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+  var link = document.createElement('link');
+  link.rel = 'manifest';
+  link.href = URL.createObjectURL(blob);
+  document.head.appendChild(link);
+
+  // Apple touch icon — try to load it; fall back silently if missing
+  var icon = document.createElement('link');
+  icon.rel = 'apple-touch-icon';
+  icon.href = 'icon-192.png';
+  document.head.appendChild(icon);
+
+  // Service worker — only if served over HTTPS (required by spec)
+  if ('serviceWorker' in navigator && location.protocol === 'https:') {
+    navigator.serviceWorker.register('sw.js').catch(function() {});
+  }
+})();
+</script>
+</body>
+</html>
